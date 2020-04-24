@@ -7,7 +7,6 @@ RUN apt-get -y update
 WORKDIR /build
 COPY go.mod go.sum Makefile ./
 COPY cmd ./cmd
-COPY assets ./assets
 ARG GIT_COMMIT
 RUN make rebuild-docker GIT_COMMIT="$GIT_COMMIT"
 
@@ -31,7 +30,7 @@ ENV APP_HOME /virgo4-digital-content-ws
 WORKDIR $APP_HOME
 
 # Create necessary directories
-RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/assets $APP_HOME/scripts
+RUN mkdir -p $APP_HOME $APP_HOME/bin $APP_HOME/scripts
 RUN chown -R webservice $APP_HOME && chgrp -R webservice $APP_HOME
 
 # port and run command
@@ -42,10 +41,9 @@ CMD scripts/entry.sh
 COPY package/data/container_bash_profile /home/webservice/.profile
 COPY package/scripts/entry.sh $APP_HOME/scripts/entry.sh
 COPY --from=builder /build/bin/virgo4-digital-content-ws $APP_HOME/bin/virgo4-digital-content-ws
-COPY --from=builder /build/assets/. $APP_HOME/assets/
 
 # Ensure permissions are correct
-RUN chown webservice:webservice /home/webservice/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/virgo4-digital-content-ws $APP_HOME/assets && chmod 755 /home/webservice/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/virgo4-digital-content-ws $APP_HOME/assets
+RUN chown webservice:webservice /home/webservice/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/virgo4-digital-content-ws && chmod 755 /home/webservice/.profile $APP_HOME/scripts/entry.sh $APP_HOME/bin/virgo4-digital-content-ws
 
 # Add the build tag
 ARG BUILD_TAG
