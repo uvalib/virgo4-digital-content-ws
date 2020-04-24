@@ -18,7 +18,7 @@ func (p *serviceContext) itemHandler(c *gin.Context) {
 	s := searchContext{}
 	s.init(p, &cl)
 
-	s.query = fmt.Sprintf(`id:"%s"`, c.Param("id"))
+	s.id = c.Param("id")
 
 	cl.logRequest()
 	resp := s.handleItemRequest()
@@ -54,7 +54,7 @@ func (p *serviceContext) healthCheckHandler(c *gin.Context) {
 	}
 
 	// fill out Solr query directly, bypassing query syntax parser
-	s.query = fmt.Sprintf(`id:"%s"`, "pingtest")
+	s.id = "pingtest"
 
 	cl.logRequest()
 	ping := s.handlePingRequest()

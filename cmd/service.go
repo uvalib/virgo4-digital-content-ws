@@ -122,23 +122,27 @@ func (p *serviceContext) validateConfig() {
 	miscValues.requireValue(p.config.Solr.Params.Qt, "solr param qt")
 	miscValues.requireValue(p.config.Solr.Params.DefType, "solr param deftype")
 
-	for _, field := range p.config.ItemFields {
-		miscValues.requireValue(field.Name, "item name")
+	for _, field := range p.config.Fields {
+		miscValues.requireValue(field.Name, "field name")
 
-		if field.Format != "" {
-			solrFields.addValue(field.Field)
+		if field.Custom == true {
+			switch field.Name {
+			case "iiif_manifest_url":
+				solrFields.addValue(field.Field)
+
+			case "pdf_status":
+				solrFields.addValue(field.Field)
+
+			case "pdf_url":
+				solrFields.addValue(field.Field)
+
+			default:
+				log.Printf("[VALIDATE] unhandled custom field: [%s]", field.Name)
+				invalid = true
+				continue
+			}
 		} else {
-			solrFields.requireValue(field.Field, "item solr field")
-		}
-	}
-
-	for _, field := range p.config.PartFields {
-		miscValues.requireValue(field.Name, "part name")
-
-		if field.Format != "" {
-			solrFields.addValue(field.Field)
-		} else {
-			solrFields.requireValue(field.Field, "item solr field")
+			solrFields.requireValue(field.Field, "solr field")
 		}
 	}
 

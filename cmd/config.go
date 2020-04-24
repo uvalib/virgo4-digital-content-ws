@@ -28,17 +28,18 @@ type serviceConfigSolr struct {
 }
 
 type serviceConfigField struct {
-	Name   string `json:"name,omitempty"`
-	Field  string `json:"field,omitempty"`
-	Format string `json:"format,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Field    string `json:"field,omitempty"`
+	Required bool   `json:"required,omitempty"`
+	Custom   bool   `json:"custom,omitempty"` // custom handling by Name
+	Array    bool   `json:"array,omitempty"`
 }
 
 type serviceConfig struct {
-	Port       string               `json:"port,omitempty"`
-	JWTKey     string               `json:"jwt_key,omitempty"`
-	Solr       serviceConfigSolr    `json:"solr,omitempty"`
-	ItemFields []serviceConfigField `json:"item_fields,omitempty"`
-	PartFields []serviceConfigField `json:"part_fields,omitempty"`
+	Port   string               `json:"port,omitempty"`
+	JWTKey string               `json:"jwt_key,omitempty"`
+	Solr   serviceConfigSolr    `json:"solr,omitempty"`
+	Fields []serviceConfigField `json:"fields,omitempty"`
 }
 
 func getSortedJSONEnvVars() []string {

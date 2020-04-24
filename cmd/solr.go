@@ -117,7 +117,7 @@ func (s *searchContext) buildSolrRequest() {
 
 	//	req.meta.client = s.virgoReq.meta.client
 
-	req.json.Params.Q = s.query
+	req.json.Params.Q = fmt.Sprintf(`id:"%s"`, s.id)
 	req.json.Params.Qt = s.svc.config.Solr.Params.Qt
 	req.json.Params.DefType = s.svc.config.Solr.Params.DefType
 	req.json.Params.Fq = nonemptyValues(s.svc.config.Solr.Params.Fq)

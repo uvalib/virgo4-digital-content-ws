@@ -8,7 +8,7 @@ import (
 type searchContext struct {
 	svc     *serviceContext
 	client  *clientContext
-	query   string
+	id      string
 	solrReq *solrRequest
 	solrRes *solrResponse
 }
@@ -44,17 +44,27 @@ func (s *searchContext) handleItemRequest() searchResponse {
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
 
-	// verify part field lengths
+	// verify array-type field lengths are equal, and all required fields are presenst
 
 	doc := s.solrRes.Response.Docs[0]
 
 	length := -1
 
-	for _, field := range s.svc.config.PartFields {
+	for _, field := range s.svc.config.Fields {
 		fieldValues := doc.getValuesByTag(field.Field)
 		fieldLength := len(fieldValues)
 
-		s.log("len(%s) = %d", field.Field, fieldLength)
+		if field.Required == true && fieldLength == 0 {
+			err := fmt.Errorf("missing required digital content field(s)")
+			s.err(err.Error())
+			return searchResponse{status: http.StatusInternalServerError, err: err}
+		}
+
+		if field.Array == false {
+			continue
+		}
+
+		s.log("%d = len(%s)", fieldLength, field.Field)
 
 		if length == -1 {
 			length = fieldLength
@@ -62,35 +72,63 @@ func (s *searchContext) handleItemRequest() searchResponse {
 		}
 
 		if fieldLength != length {
-			err := fmt.Errorf("parts field length mismatch")
+			err := fmt.Errorf("array-type field length mismatch")
 			s.err(err.Error())
 			return searchResponse{status: http.StatusInternalServerError, err: err}
 		}
 	}
 
-	// build response object
-	// might wanna put these in structs for ordering/omitting empty
-
-	item := make(map[string]interface{})
-
-	for _, field := range s.svc.config.ItemFields {
-		fieldValues := doc.getValuesByTag(field.Field)
-		item[field.Name] = firstElementOf(fieldValues)
+	if length == 0 {
+		err := fmt.Errorf("no digital parts found in this item")
+		s.err(err.Error())
+		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
+
+	// build response object
 
 	var parts []map[string]interface{}
 
 	for i := 0; i < length; i++ {
 		part := make(map[string]interface{})
 
-		for _, field := range s.svc.config.PartFields {
+		for _, field := range s.svc.config.Fields {
 			fieldValues := doc.getValuesByTag(field.Field)
-			part[field.Name] = fieldValues[i]
+
+			var fieldValue string
+
+			if field.Custom == true {
+				switch field.Name {
+				case "iiif_manifest_url":
+					fieldValue = ""
+
+				case "pdf_status":
+					fieldValue = ""
+
+				case "pdf_url":
+					fieldValue = ""
+
+				default:
+				}
+			} else {
+				if field.Array == true {
+					fieldValue = fieldValues[i]
+				} else {
+					// what should this be?
+					fieldValue = firstElementOf(fieldValues)
+				}
+			}
+
+			if fieldValue != "" {
+				part[field.Name] = fieldValue
+			}
 		}
 
 		parts = append(parts, part)
 	}
 
+	item := make(map[string]interface{})
+
+	item["id"] = s.id
 	item["parts"] = parts
 
 	return searchResponse{status: http.StatusOK, data: item}
