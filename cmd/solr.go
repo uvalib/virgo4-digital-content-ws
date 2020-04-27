@@ -44,6 +44,7 @@ type solrResponseHeader struct {
 
 type solrDocument struct {
 	AlternateID          []string `json:"alternate_id_a,omitempty"`
+	Barcode              []string `json:"barcode_a,omitempty"`
 	ID                   string   `json:"id,omitempty"`
 	IndividualCallNumber []string `json:"individual_call_number_a,omitempty"`
 	PDFURL               []string `json:"pdf_url_a,omitempty"`

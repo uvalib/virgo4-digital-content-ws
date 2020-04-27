@@ -139,7 +139,6 @@ func (p *serviceContext) validateConfig() {
 			default:
 				log.Printf("[VALIDATE] unhandled custom field: [%s]", field.Name)
 				invalid = true
-				continue
 			}
 		} else {
 			solrFields.requireValue(field.Field, "solr field")

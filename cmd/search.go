@@ -32,14 +32,14 @@ func (s *searchContext) err(format string, args ...interface{}) {
 	s.client.err(format, args...)
 }
 
-func (s *searchContext) handleItemRequest() searchResponse {
+func (s *searchContext) handleResourceRequest() searchResponse {
 	if err := s.solrQuery(); err != nil {
 		s.err("query execution error: %s", err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
 
 	if s.solrRes.meta.numRows == 0 {
-		err := fmt.Errorf("item not found")
+		err := fmt.Errorf("record not found")
 		s.err(err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
@@ -49,15 +49,17 @@ func (s *searchContext) handleItemRequest() searchResponse {
 	doc := s.solrRes.Response.Docs[0]
 
 	length := -1
+	invalid := false
 
 	for _, field := range s.svc.config.Fields {
 		fieldValues := doc.getValuesByTag(field.Field)
 		fieldLength := len(fieldValues)
 
 		if field.Required == true && fieldLength == 0 {
-			err := fmt.Errorf("missing required digital content field(s)")
+			err := fmt.Errorf("missing required digital content field: %s", field.Field)
 			s.err(err.Error())
-			return searchResponse{status: http.StatusInternalServerError, err: err}
+			invalid = true
+			continue
 		}
 
 		if field.Array == false {
@@ -72,24 +74,31 @@ func (s *searchContext) handleItemRequest() searchResponse {
 		}
 
 		if fieldLength != length {
-			err := fmt.Errorf("array-type field length mismatch")
+			err := fmt.Errorf("array-type field length mismatch for field: %s", field.Field)
 			s.err(err.Error())
-			return searchResponse{status: http.StatusInternalServerError, err: err}
+			invalid = true
+			continue
 		}
 	}
 
+	if invalid == true {
+		err := fmt.Errorf("digital content field inconsistencies")
+		s.err(err.Error())
+		return searchResponse{status: http.StatusInternalServerError, err: err}
+	}
+
 	if length == 0 {
-		err := fmt.Errorf("no digital parts found in this item")
+		err := fmt.Errorf("no digital items found in this record")
 		s.err(err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
 
 	// build response object
 
-	var parts []map[string]interface{}
+	var items []map[string]interface{}
 
 	for i := 0; i < length; i++ {
-		part := make(map[string]interface{})
+		item := make(map[string]interface{})
 
 		for _, field := range s.svc.config.Fields {
 			fieldValues := doc.getValuesByTag(field.Field)
@@ -99,13 +108,13 @@ func (s *searchContext) handleItemRequest() searchResponse {
 			if field.Custom == true {
 				switch field.Name {
 				case "iiif_manifest_url":
-					fieldValue = ""
+					fieldValue = firstElementOf(fieldValues)
 
 				case "pdf_status":
-					fieldValue = ""
+					fieldValue = firstElementOf(fieldValues)
 
 				case "pdf_url":
-					fieldValue = ""
+					fieldValue = firstElementOf(fieldValues)
 
 				default:
 				}
@@ -119,19 +128,19 @@ func (s *searchContext) handleItemRequest() searchResponse {
 			}
 
 			if fieldValue != "" {
-				part[field.Name] = fieldValue
+				item[field.Name] = fieldValue
 			}
 		}
 
-		parts = append(parts, part)
+		items = append(items, item)
 	}
 
-	item := make(map[string]interface{})
+	record := make(map[string]interface{})
 
-	item["id"] = s.id
-	item["parts"] = parts
+	record["id"] = s.id
+	record["items"] = items
 
-	return searchResponse{status: http.StatusOK, data: item}
+	return searchResponse{status: http.StatusOK, data: record}
 }
 
 func (s *searchContext) handlePingRequest() searchResponse {

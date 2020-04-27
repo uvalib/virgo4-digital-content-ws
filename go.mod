@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.5.1
 	github.com/prometheus/procfs v0.0.11 // indirect
 	github.com/sirupsen/logrus v1.5.0 // indirect
-	github.com/uvalib/virgo4-jwt v0.0.0-20200420194352-8f96499e5cc9
+	github.com/uvalib/virgo4-jwt v0.0.0-20200427141047-8e5c1f68bc8f
 	github.com/zsais/go-gin-prometheus v0.1.0
-	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
+	golang.org/x/sys v0.0.0-20200427175716-29b57079015a // indirect
 )
