@@ -27,11 +27,16 @@ type serviceSolr struct {
 	url    string
 }
 
+type servicePdf struct {
+	client *http.Client
+}
+
 type serviceContext struct {
 	randomSource *rand.Rand
 	config       *serviceConfig
 	version      serviceVersion
 	solr         serviceSolr
+	pdf          servicePdf
 }
 
 type stringValidator struct {
@@ -108,6 +113,30 @@ func (p *serviceContext) initSolr() {
 	log.Printf("[SERVICE] solr.url             = [%s]", p.solr.url)
 }
 
+func (p *serviceContext) initPdf() {
+	// client setup
+
+	connTimeout := timeoutWithMinimum(p.config.Pdf.ConnTimeout, 1)
+	readTimeout := timeoutWithMinimum(p.config.Pdf.ReadTimeout, 1)
+
+	pdfClient := &http.Client{
+		Timeout: time.Duration(readTimeout) * time.Second,
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   time.Duration(connTimeout) * time.Second,
+				KeepAlive: 60 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        100, // we are most likely hitting one pdf host, so
+			MaxIdleConnsPerHost: 100, // these two values can be the same
+			IdleConnTimeout:     90 * time.Second,
+		},
+	}
+
+	p.pdf = servicePdf{
+		client: pdfClient,
+	}
+}
+
 func (p *serviceContext) validateConfig() {
 	// ensure the existence and validity of required variables/solr fields
 
@@ -172,6 +201,7 @@ func initializeService(cfg *serviceConfig) *serviceContext {
 
 	p.initVersion()
 	p.initSolr()
+	p.initPdf()
 
 	p.validateConfig()
 

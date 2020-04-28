@@ -100,30 +100,48 @@ func (s *searchContext) handleResourceRequest() searchResponse {
 	for i := 0; i < length; i++ {
 		item := make(map[string]interface{})
 
-		for _, field := range s.svc.config.Fields {
-			fieldValues := doc.getValuesByTag(field.Field)
+		// first pass: assign non-custom fields (may be needed in second pass)
 
+		for _, field := range s.svc.config.Fields {
 			var fieldValue string
 
-			if field.Custom == true {
-				switch field.Name {
-				case "iiif_manifest_url":
-					fieldValue = firstElementOf(fieldValues)
+			if field.Custom == false {
+				fieldValues := doc.getValuesByTag(field.Field)
 
-				case "pdf_status":
-					fieldValue = firstElementOf(fieldValues)
-
-				case "pdf_url":
-					fieldValue = firstElementOf(fieldValues)
-
-				default:
-				}
-			} else {
 				if field.Array == true {
 					fieldValue = fieldValues[i]
 				} else {
 					// what should this be?
 					fieldValue = firstElementOf(fieldValues)
+				}
+			}
+
+			if fieldValue != "" {
+				item[field.Name] = fieldValue
+			}
+		}
+
+		// second pass: build custom fields
+		for _, field := range s.svc.config.Fields {
+			var fieldValue string
+
+			if field.Custom == true {
+				fieldValues := doc.getValuesByTag(field.Field)
+
+				switch field.Name {
+				case "iiif_manifest_url":
+					//fieldValue = firstElementOf(fieldValues)
+
+				case "pdf_status":
+					pdfURL := firstElementOf(fieldValues)
+					pdfPID := item["pid"].(string)
+
+					pdfStatus, pdfErr := s.getPdfStatus(pdfURL, pdfPID)
+					if pdfErr != nil {
+						pdfStatus = ""
+					}
+
+					fieldValue = pdfStatus
 				}
 			}
 

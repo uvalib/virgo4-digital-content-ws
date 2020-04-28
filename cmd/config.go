@@ -27,6 +27,19 @@ type serviceConfigSolr struct {
 	Params      serviceConfigSolrParams `json:"params,omitempty"`
 }
 
+type serviceConfigPdfEndpoints struct {
+	Generate string `json:"generate,omitempty"`
+	Status   string `json:"status,omitempty"`
+	Download string `json:"download,omitempty"`
+	Delete   string `json:"delete,omitempty"`
+}
+
+type serviceConfigPdf struct {
+	ConnTimeout string                    `json:"conn_timeout,omitempty"`
+	ReadTimeout string                    `json:"read_timeout,omitempty"`
+	Endpoints   serviceConfigPdfEndpoints `json:"endpoints,omitempty"`
+}
+
 type serviceConfigField struct {
 	Name     string `json:"name,omitempty"`
 	Field    string `json:"field,omitempty"`
@@ -39,6 +52,7 @@ type serviceConfig struct {
 	Port   string               `json:"port,omitempty"`
 	JWTKey string               `json:"jwt_key,omitempty"`
 	Solr   serviceConfigSolr    `json:"solr,omitempty"`
+	Pdf    serviceConfigPdf     `json:"pdf,omitempty"`
 	Fields []serviceConfigField `json:"fields,omitempty"`
 }
 
