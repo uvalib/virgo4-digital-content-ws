@@ -5,7 +5,7 @@ This is a web service to retrieve digital content from Solr.
 * GET /version : returns build version
 * GET /healthcheck : returns health check information
 * GET /metrics : returns Prometheus metrics
-* GET /api/resource/{id} : returns digital content for a single record in Solr
+* GET /api/item/{id} : returns digital content for a single item (record) in Solr
 
 All endpoints under /api require authentication.
 

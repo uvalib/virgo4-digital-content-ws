@@ -50,7 +50,7 @@ func main() {
 	router.GET("/healthcheck", svc.healthCheckHandler)
 
 	if api := router.Group("/api"); api != nil {
-		api.GET("/resource/:id", svc.authenticateHandler, svc.resourceHandler)
+		api.GET("/item/:id", svc.authenticateHandler, svc.itemHandler)
 	}
 
 	portStr := fmt.Sprintf(":%s", svc.config.Port)

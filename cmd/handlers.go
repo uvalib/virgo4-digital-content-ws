@@ -11,7 +11,7 @@ import (
 	"github.com/uvalib/virgo4-jwt/v4jwt"
 )
 
-func (p *serviceContext) resourceHandler(c *gin.Context) {
+func (p *serviceContext) itemHandler(c *gin.Context) {
 	cl := clientContext{}
 	cl.init(p, c)
 
@@ -21,7 +21,7 @@ func (p *serviceContext) resourceHandler(c *gin.Context) {
 	s.id = c.Param("id")
 
 	cl.logRequest()
-	resp := s.handleResourceRequest()
+	resp := s.handleItemRequest()
 	cl.logResponse(resp)
 
 	if resp.err != nil {

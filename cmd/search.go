@@ -32,7 +32,7 @@ func (s *searchContext) err(format string, args ...interface{}) {
 	s.client.err(format, args...)
 }
 
-func (s *searchContext) handleResourceRequest() searchResponse {
+func (s *searchContext) handleItemRequest() searchResponse {
 	if err := s.solrQuery(); err != nil {
 		s.err("query execution error: %s", err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
