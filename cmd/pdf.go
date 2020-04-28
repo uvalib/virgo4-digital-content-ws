@@ -61,7 +61,7 @@ func (s *searchContext) getPdfStatus(pdfURL, pid string) (string, error) {
 
 	// external service success logging
 
-	s.log("Successful PDF response from %s %s. Elapsed Time: %d (ms)", req.Method, s.svc.solr.url, elapsedMS)
+	s.log("Successful PDF response from %s %s. Elapsed Time: %d (ms)", req.Method, url, elapsedMS)
 
 	return string(status), nil
 }
