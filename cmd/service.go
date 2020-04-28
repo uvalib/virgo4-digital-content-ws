@@ -151,26 +151,43 @@ func (p *serviceContext) validateConfig() {
 	miscValues.requireValue(p.config.Solr.Params.Qt, "solr param qt")
 	miscValues.requireValue(p.config.Solr.Params.DefType, "solr param deftype")
 
-	for _, field := range p.config.Fields {
-		miscValues.requireValue(field.Name, "field name")
+	for _, field := range p.config.Fields.Item {
+		miscValues.requireValue(field.Name, "item field name")
+		solrFields.requireValue(field.Field, "item solr field")
+	}
 
-		if field.Custom == true {
-			switch field.Name {
-			case "iiif_manifest_url":
-				solrFields.addValue(field.Field)
+	for _, field := range p.config.Fields.Parts.Indexed {
+		miscValues.requireValue(field.Name, "indexed parts field name")
+		solrFields.requireValue(field.Field, "indexed parts solr field")
+	}
 
-			case "pdf_status":
-				solrFields.addValue(field.Field)
+	for _, field := range p.config.Fields.Parts.Custom {
+		miscValues.requireValue(field.Name, "custom parts field name")
 
-			case "pdf_url":
-				solrFields.addValue(field.Field)
+		switch field.Name {
+		case "iiif_manifest_url":
+			solrFields.requireValue(field.Field, fmt.Sprintf("custom parts %s solr field", field.Name))
 
-			default:
-				log.Printf("[VALIDATE] unhandled custom field: [%s]", field.Name)
+			if field.CustomInfo == nil {
+				log.Printf("[VALIDATE] missing custom parts %s custom info section", field.Name)
 				invalid = true
+				continue
 			}
-		} else {
-			solrFields.requireValue(field.Field, "solr field")
+
+			if field.CustomInfo.IIIFManifestURL == nil {
+				log.Printf("[VALIDATE] missing custom parts %s custom info %s section", field.Name, field.Name)
+				invalid = true
+				continue
+			}
+
+			miscValues.requireValue(field.CustomInfo.IIIFManifestURL.URLPrefix, fmt.Sprintf("missing custom parts %s custom info %s section url prefix", field.Name, field.Name))
+
+		case "pdf":
+			solrFields.requireValue(field.Field, fmt.Sprintf("custom parts %s solr field", field.Name))
+
+		default:
+			log.Printf("[VALIDATE] unhandled custom field: [%s]", field.Name)
+			invalid = true
 		}
 	}
 

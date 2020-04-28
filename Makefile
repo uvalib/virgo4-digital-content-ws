@@ -136,3 +136,5 @@ check-shadow:
 	go vet -vettool=$(GOBIN)/shadow ./cmd/...
 
 check: check-shadow check-static
+
+mesuffer: check dep fmt vet

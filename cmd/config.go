@@ -40,20 +40,37 @@ type serviceConfigPdf struct {
 	Endpoints   serviceConfigPdfEndpoints `json:"endpoints,omitempty"`
 }
 
+type poolConfigFieldTypeIIIFManifestURL struct {
+	URLPrefix string `json:"url_prefix,omitempty"`
+}
+
+type servceConfigFieldCustomInfo struct {
+	IIIFManifestURL *poolConfigFieldTypeIIIFManifestURL `json:"iiif_manifest_url,omitempty"`
+}
+
 type serviceConfigField struct {
-	Name     string `json:"name,omitempty"`
-	Field    string `json:"field,omitempty"`
-	Required bool   `json:"required,omitempty"`
-	Custom   bool   `json:"custom,omitempty"` // custom handling by Name
-	Array    bool   `json:"array,omitempty"`
+	Name       string                       `json:"name,omitempty"`
+	Field      string                       `json:"field,omitempty"`
+	Required   bool                         `json:"required,omitempty"`
+	CustomInfo *servceConfigFieldCustomInfo `json:"custom_info,omitempty"` // extra info for certain custom formats
+}
+
+type serviceConfigParts struct {
+	Indexed []serviceConfigField `json:"indexed,omitempty"` // values taken from Solr arrays by index
+	Custom  []serviceConfigField `json:"custom,omitempty"`  // values built from other info (config, indexed values, item values)
+}
+
+type serviceConfigFields struct {
+	Item  []serviceConfigField `json:"item,omitempty"`  // item-level fields
+	Parts serviceConfigParts   `json:"parts,omitempty"` // part-level fields
 }
 
 type serviceConfig struct {
-	Port   string               `json:"port,omitempty"`
-	JWTKey string               `json:"jwt_key,omitempty"`
-	Solr   serviceConfigSolr    `json:"solr,omitempty"`
-	Pdf    serviceConfigPdf     `json:"pdf,omitempty"`
-	Fields []serviceConfigField `json:"fields,omitempty"`
+	Port   string              `json:"port,omitempty"`
+	JWTKey string              `json:"jwt_key,omitempty"`
+	Solr   serviceConfigSolr   `json:"solr,omitempty"`
+	Pdf    serviceConfigPdf    `json:"pdf,omitempty"`
+	Fields serviceConfigFields `json:"fields,omitempty"`
 }
 
 func getSortedJSONEnvVars() []string {

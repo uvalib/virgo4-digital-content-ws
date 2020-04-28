@@ -44,14 +44,14 @@ func (s *searchContext) handleResourceRequest() searchResponse {
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
 
-	// verify array-type field lengths are equal, and all required fields are presenst
+	// verify indexed part field lengths are equal, and all required fields are present
 
 	doc := s.solrRes.Response.Docs[0]
 
 	length := -1
 	invalid := false
 
-	for _, field := range s.svc.config.Fields {
+	for _, field := range s.svc.config.Fields.Parts.Indexed {
 		fieldValues := doc.getValuesByTag(field.Field)
 		fieldLength := len(fieldValues)
 
@@ -59,10 +59,6 @@ func (s *searchContext) handleResourceRequest() searchResponse {
 			err := fmt.Errorf("missing required digital content field: %s", field.Field)
 			s.err(err.Error())
 			invalid = true
-			continue
-		}
-
-		if field.Array == false {
 			continue
 		}
 
@@ -88,77 +84,93 @@ func (s *searchContext) handleResourceRequest() searchResponse {
 	}
 
 	if length == 0 {
-		err := fmt.Errorf("no digital items found in this record")
+		err := fmt.Errorf("no digital parts found in this record")
 		s.err(err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}
 
 	// build response object
 
-	var items []map[string]interface{}
+	var parts []map[string]interface{}
+
+	// assign part-level fields
 
 	for i := 0; i < length; i++ {
-		item := make(map[string]interface{})
+		part := make(map[string]interface{})
 
-		// first pass: assign non-custom fields (may be needed in second pass)
-
-		for _, field := range s.svc.config.Fields {
-			var fieldValue string
-
-			if field.Custom == false {
-				fieldValues := doc.getValuesByTag(field.Field)
-
-				if field.Array == true {
-					fieldValue = fieldValues[i]
-				} else {
-					// what should this be?
-					fieldValue = firstElementOf(fieldValues)
-				}
-			}
-
-			if fieldValue != "" {
-				item[field.Name] = fieldValue
+		for _, field := range s.svc.config.Fields.Parts.Indexed {
+			fieldValues := doc.getValuesByTag(field.Field)
+			if val := fieldValues[i]; val != "" {
+				part[field.Name] = val
 			}
 		}
 
-		// second pass: build custom fields
-		for _, field := range s.svc.config.Fields {
-			var fieldValue string
+		for _, field := range s.svc.config.Fields.Parts.Custom {
+			var val interface{}
 
-			if field.Custom == true {
-				fieldValues := doc.getValuesByTag(field.Field)
+			fieldValues := doc.getValuesByTag(field.Field)
 
-				switch field.Name {
-				case "iiif_manifest_url":
-					//fieldValue = firstElementOf(fieldValues)
+			switch field.Name {
+			case "iiif_manifest_url":
+				pid := part["pid"].(string)
+				val = fmt.Sprintf("%s/%s", field.CustomInfo.IIIFManifestURL.URLPrefix, pid)
 
-				case "pdf_status":
-					pdfURL := firstElementOf(fieldValues)
-					pdfPID := item["pid"].(string)
-
-					pdfStatus, pdfErr := s.getPdfStatus(pdfURL, pdfPID)
-					if pdfErr != nil {
-						pdfStatus = ""
-					}
-
-					fieldValue = pdfStatus
+			case "pdf":
+				pdfURL := firstElementOf(fieldValues)
+				if pdfURL == "" {
+					s.log("no pdf url; skipping pdf section")
+					continue
 				}
+
+				pid := part["pid"].(string)
+				if pid == "" {
+					s.log("no pid; skipping pdf section")
+					continue
+				}
+
+				// build a pdf subsection
+
+				pdf := make(map[string]interface{})
+
+				pdfStatus, pdfErr := s.getPdfStatus(pdfURL, pid)
+				if pdfErr != nil {
+					pdfStatus = ""
+				}
+
+				urls := make(map[string]interface{})
+				urls["generate"] = fmt.Sprintf("%s/%s%s", pdfURL, pid, s.svc.config.Pdf.Endpoints.Generate)
+				urls["status"] = fmt.Sprintf("%s/%s%s", pdfURL, pid, s.svc.config.Pdf.Endpoints.Status)
+				urls["download"] = fmt.Sprintf("%s/%s%s", pdfURL, pid, s.svc.config.Pdf.Endpoints.Download)
+				urls["delete"] = fmt.Sprintf("%s/%s%s", pdfURL, pid, s.svc.config.Pdf.Endpoints.Delete)
+
+				pdf["status"] = pdfStatus
+				pdf["urls"] = urls
+
+				val = pdf
 			}
 
-			if fieldValue != "" {
-				item[field.Name] = fieldValue
+			if val != "" {
+				part[field.Name] = val
 			}
 		}
 
-		items = append(items, item)
+		parts = append(parts, part)
 	}
 
-	record := make(map[string]interface{})
+	item := make(map[string]interface{})
 
-	record["id"] = s.id
-	record["items"] = items
+	// assign item-level fields
 
-	return searchResponse{status: http.StatusOK, data: record}
+	for _, field := range s.svc.config.Fields.Item {
+		fieldValues := doc.getValuesByTag(field.Field)
+		if val := firstElementOf(fieldValues); val != "" {
+			item[field.Name] = val
+		}
+	}
+
+	item["parts"] = parts
+
+	return searchResponse{status: http.StatusOK, data: item}
 }
 
 func (s *searchContext) handlePingRequest() searchResponse {
