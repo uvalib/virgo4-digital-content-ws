@@ -45,7 +45,7 @@ func (s *searchContext) getPdfStatus(pdfURL, pid string) (string, error) {
 
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
 		errMsg := fmt.Errorf("unexpected status code %d", res.StatusCode)
 		s.log("[PDF] unexpected status code %d", res.StatusCode)
 		s.log("ERROR: Failed response from %s %s - %d:%s. Elapsed Time: %d (ms)", req.Method, url, res.StatusCode, errMsg, elapsedMS)

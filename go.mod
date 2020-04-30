@@ -11,5 +11,5 @@ require (
 	github.com/sirupsen/logrus v1.5.0 // indirect
 	github.com/uvalib/virgo4-jwt v0.0.0-20200427141047-8e5c1f68bc8f
 	github.com/zsais/go-gin-prometheus v0.1.0
-	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect
+	golang.org/x/sys v0.0.0-20200430082407-1f5687305801 // indirect
 )
