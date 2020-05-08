@@ -84,7 +84,7 @@ func getBearerToken(authorization string) (string, error) {
 
 	// must have two components, the first of which is "Bearer", and the second a non-empty token
 	if len(components) != 2 || components[0] != "Bearer" || components[1] == "" {
-		return "", fmt.Errorf("Invalid Authorization header: [%s]", authorization)
+		return "", fmt.Errorf("invalid Authorization header: [%s]", authorization)
 	}
 
 	token := components[1]
