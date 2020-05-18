@@ -41,7 +41,7 @@ func (s *searchContext) handleItemRequest() searchResponse {
 	if s.solrRes.meta.numRows == 0 {
 		err := fmt.Errorf("record not found")
 		s.err(err.Error())
-		return searchResponse{status: http.StatusInternalServerError, err: err}
+		return searchResponse{status: http.StatusNotFound, err: err}
 	}
 
 	// verify indexed part field lengths are equal, and all required fields are present
