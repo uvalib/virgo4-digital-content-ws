@@ -129,7 +129,6 @@ func loadConfig() *serviceConfig {
 		cfg.Solr.Host = host
 	}
 
-	//bytes, err := json.MarshalIndent(cfg, "", "  ")
 	bytes, err := json.Marshal(cfg)
 	if err != nil {
 		log.Printf("error encoding config json: %s", err.Error())
