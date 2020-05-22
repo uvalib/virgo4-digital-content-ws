@@ -22,9 +22,14 @@ type serviceVersion struct {
 	GitCommit    string `json:"git_commit,omitempty"`
 }
 
-type serviceSolr struct {
+type serviceSolrContext struct {
 	client *http.Client
 	url    string
+}
+
+type serviceSolr struct {
+	service     serviceSolrContext
+	healthcheck serviceSolrContext
 }
 
 type servicePdf struct {
@@ -86,13 +91,11 @@ func (p *serviceContext) initVersion() {
 	log.Printf("[SERVICE] version.GitCommit    = [%s]", p.version.GitCommit)
 }
 
-func (p *serviceContext) initSolr() {
-	// client setup
+func httpClientWithTimeouts(conn, read string) *http.Client {
+	connTimeout := integerWithMinimum(conn, 1)
+	readTimeout := integerWithMinimum(read, 1)
 
-	connTimeout := timeoutWithMinimum(p.config.Solr.ConnTimeout, 5)
-	readTimeout := timeoutWithMinimum(p.config.Solr.ReadTimeout, 5)
-
-	solrClient := &http.Client{
+	client := &http.Client{
 		Timeout: time.Duration(readTimeout) * time.Second,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
@@ -105,35 +108,38 @@ func (p *serviceContext) initSolr() {
 		},
 	}
 
-	p.solr = serviceSolr{
-		url:    fmt.Sprintf("%s/%s/%s", p.config.Solr.Host, p.config.Solr.Core, p.config.Solr.Handler),
-		client: solrClient,
+	return client
+}
+
+func (p *serviceContext) initSolr() {
+	// client setup
+
+	serviceCtx := serviceSolrContext{
+		url:    fmt.Sprintf("%s/%s/%s", p.config.Solr.Host, p.config.Solr.Core, p.config.Solr.Clients.Service.Endpoint),
+		client: httpClientWithTimeouts(p.config.Solr.Clients.Service.ConnTimeout, p.config.Solr.Clients.Service.ReadTimeout),
 	}
 
-	log.Printf("[SERVICE] solr.url             = [%s]", p.solr.url)
+	healthCtx := serviceSolrContext{
+		url:    fmt.Sprintf("%s/%s/%s", p.config.Solr.Host, p.config.Solr.Core, p.config.Solr.Clients.HealthCheck.Endpoint),
+		client: httpClientWithTimeouts(p.config.Solr.Clients.HealthCheck.ConnTimeout, p.config.Solr.Clients.HealthCheck.ReadTimeout),
+	}
+
+	solr := serviceSolr{
+		service:     serviceCtx,
+		healthcheck: healthCtx,
+	}
+
+	p.solr = solr
+
+	log.Printf("[SERVICE] solr service url     = [%s]", serviceCtx.url)
+	log.Printf("[SERVICE] solr healthcheck url = [%s]", healthCtx.url)
 }
 
 func (p *serviceContext) initPdf() {
 	// client setup
 
-	connTimeout := timeoutWithMinimum(p.config.Pdf.ConnTimeout, 1)
-	readTimeout := timeoutWithMinimum(p.config.Pdf.ReadTimeout, 1)
-
-	pdfClient := &http.Client{
-		Timeout: time.Duration(readTimeout) * time.Second,
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   time.Duration(connTimeout) * time.Second,
-				KeepAlive: 60 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        100, // we are most likely hitting one pdf host, so
-			MaxIdleConnsPerHost: 100, // these two values can be the same
-			IdleConnTimeout:     90 * time.Second,
-		},
-	}
-
 	p.pdf = servicePdf{
-		client: pdfClient,
+		client: httpClientWithTimeouts(p.config.Pdf.ConnTimeout, p.config.Pdf.ReadTimeout),
 	}
 }
 
@@ -147,7 +153,8 @@ func (p *serviceContext) validateConfig() {
 
 	miscValues.requireValue(p.config.Solr.Host, "solr host")
 	miscValues.requireValue(p.config.Solr.Core, "solr core")
-	miscValues.requireValue(p.config.Solr.Handler, "solr handler")
+	miscValues.requireValue(p.config.Solr.Clients.Service.Endpoint, "solr service endpoint")
+	miscValues.requireValue(p.config.Solr.Clients.HealthCheck.Endpoint, "solr healthcheck endpoint")
 	miscValues.requireValue(p.config.Solr.Params.Qt, "solr param qt")
 	miscValues.requireValue(p.config.Solr.Params.DefType, "solr param deftype")
 

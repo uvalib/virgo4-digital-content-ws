@@ -18,13 +18,22 @@ type serviceConfigSolrParams struct {
 	Fl      []string `json:"fl,omitempty"`
 }
 
+type serviceConfigSolrClient struct {
+	Endpoint    string `json:"endpoint,omitempty"`
+	ConnTimeout string `json:"conn_timeout,omitempty"`
+	ReadTimeout string `json:"read_timeout,omitempty"`
+}
+
+type serviceConfigSolrClients struct {
+	Service     serviceConfigSolrClient `json:"service,omitempty"`
+	HealthCheck serviceConfigSolrClient `json:"healthcheck,omitempty"`
+}
+
 type serviceConfigSolr struct {
-	Host        string                  `json:"host,omitempty"`
-	Core        string                  `json:"core,omitempty"`
-	Handler     string                  `json:"handler,omitempty"`
-	ConnTimeout string                  `json:"conn_timeout,omitempty"`
-	ReadTimeout string                  `json:"read_timeout,omitempty"`
-	Params      serviceConfigSolrParams `json:"params,omitempty"`
+	Host    string                   `json:"host,omitempty"`
+	Core    string                   `json:"core,omitempty"`
+	Clients serviceConfigSolrClients `json:"clients,omitempty"`
+	Params  serviceConfigSolrParams  `json:"params,omitempty"`
 }
 
 type serviceConfigPdfEndpoints struct {

@@ -174,7 +174,7 @@ func (s *searchContext) handleItemRequest() searchResponse {
 }
 
 func (s *searchContext) handlePingRequest() searchResponse {
-	if err := s.solrQuery(); err != nil {
+	if err := s.solrPing(); err != nil {
 		s.err("query execution error: %s", err.Error())
 		return searchResponse{status: http.StatusInternalServerError, err: err}
 	}

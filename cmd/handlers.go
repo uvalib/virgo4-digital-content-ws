@@ -49,18 +49,11 @@ func (p *serviceContext) healthCheckHandler(c *gin.Context) {
 	s := searchContext{}
 	s.init(p, &cl)
 
-	if s.client.opts.verbose == false {
-		s.client.nolog = true
-	}
-
-	// fill out Solr query directly, bypassing query syntax parser
-	s.id = "pingtest"
-
-	cl.logRequest()
 	ping := s.handlePingRequest()
-	cl.logResponse(ping)
 
 	// build response
+
+	internalServiceError := false
 
 	type hcResp struct {
 		Healthy bool   `json:"healthy"`
@@ -69,14 +62,19 @@ func (p *serviceContext) healthCheckHandler(c *gin.Context) {
 
 	hcSolr := hcResp{Healthy: true}
 	if ping.err != nil {
+		internalServiceError = true
 		hcSolr = hcResp{Healthy: false, Message: ping.err.Error()}
 	}
 
 	hcMap := make(map[string]hcResp)
-
 	hcMap["solr"] = hcSolr
 
-	c.JSON(ping.status, hcMap)
+	hcStatus := http.StatusOK
+	if internalServiceError == true {
+		hcStatus = http.StatusInternalServerError
+	}
+
+	c.JSON(hcStatus, hcMap)
 }
 
 func getBearerToken(authorization string) (string, error) {
