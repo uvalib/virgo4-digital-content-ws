@@ -69,7 +69,7 @@ func (s *searchContext) handleItemRequest() searchResponse {
 			continue
 		}
 
-		if fieldLength != length {
+		if fieldLength != 0 && fieldLength != length {
 			err := fmt.Errorf("array-type field length mismatch for field: %s", field.Field)
 			s.err(err.Error())
 			invalid = true
@@ -100,8 +100,12 @@ func (s *searchContext) handleItemRequest() searchResponse {
 
 		for _, field := range s.svc.config.Fields.Parts.Indexed {
 			fieldValues := doc.getValuesByTag(field.Field)
-			if val := fieldValues[i]; val != "" {
-				part[field.Name] = val
+			// field will have len() of either 0 or length
+			part[field.Name] = fmt.Sprintf("Item %d", i+1)
+			if len(fieldValues) > 0 {
+				if val := fieldValues[i]; val != "" {
+					part[field.Name] = val
+				}
 			}
 		}
 
