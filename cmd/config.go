@@ -58,10 +58,11 @@ type servceConfigFieldCustomInfo struct {
 }
 
 type serviceConfigField struct {
-	Name       string                       `json:"name,omitempty"`
-	Field      string                       `json:"field,omitempty"`
-	Required   bool                         `json:"required,omitempty"`
-	CustomInfo *servceConfigFieldCustomInfo `json:"custom_info,omitempty"` // extra info for certain custom formats
+	Name          string                       `json:"name,omitempty"`
+	Field         string                       `json:"field,omitempty"`
+	Required      bool                         `json:"required,omitempty"`
+	DefaultPrefix string                       `json:"default_prefix,omitempty"`
+	CustomInfo    *servceConfigFieldCustomInfo `json:"custom_info,omitempty"` // extra info for certain custom formats
 }
 
 type serviceConfigParts struct {
